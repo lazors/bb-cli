@@ -1,0 +1,23 @@
+import { Command } from "commander";
+import { BitbucketClient } from "../../../api/client.js";
+import { reopenComment } from "../../../api/comments.js";
+import { resolveWorkspace } from "../../../auth/credentials.js";
+import { outputAction } from "../../../utils/output.js";
+import { handleApiError } from "../../../utils/errors.js";
+
+export const commentReopenCommand = new Command("reopen")
+  .description("Reopen a resolved comment thread")
+  .argument("<repo>", "Repository slug")
+  .argument("<pr-id>", "Pull request ID", parseInt)
+  .argument("<comment-id>", "Comment ID", parseInt)
+  .action(async (repo, prId, commentId, _, cmd) => {
+    const globals = cmd.optsWithGlobals();
+    try {
+      const workspace = resolveWorkspace(globals.workspace);
+      const client = new BitbucketClient(globals.verbose);
+      await reopenComment(client, workspace, repo, prId, commentId);
+      outputAction(`Reopened comment #${commentId} on PR #${prId}.`, globals.json);
+    } catch (err) {
+      handleApiError(err);
+    }
+  });
